@@ -13,4 +13,8 @@ class Profile extends Model
         'phone',
         'image',
     ];
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

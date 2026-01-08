@@ -22,4 +22,25 @@ class User extends Authenticatable
         'password',
         'remember_token',
     ];
+    public function deliveries()
+    {
+        return $this->hasMany(Delivery::class);
+    }
+
+    public function homeServices()
+    {
+        return $this->hasMany(Home_Service::class);
+    }
+    public function estateServices()
+    {
+        return $this->hasMany(Estate_Service::class);
+    }
+    public function profile()
+    {
+        return $this->hasOne(Profile::class);
+    }
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class);
+    }
 }

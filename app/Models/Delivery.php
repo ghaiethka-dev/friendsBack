@@ -12,4 +12,8 @@ class Delivery extends Model
         'lat',
         'lon',
     ];
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
 }
