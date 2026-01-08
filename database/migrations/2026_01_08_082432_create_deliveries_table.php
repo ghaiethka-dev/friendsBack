@@ -14,6 +14,10 @@ return new class extends Migration
         Schema::create('deliveries', function (Blueprint $table) {
             $table->id();
             $table->timestamps();
+            $table->string('content');
+            $table->string('location');
+            $table->string('lat');
+            $table->string('lon');
         });
     }
 

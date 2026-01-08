@@ -6,5 +6,10 @@ use Illuminate\Database\Eloquent\Model;
 
 class Delivery extends Model
 {
-    //
+    protected $fillable = [
+        'content',
+        'location',
+        'lat',
+        'lon',
+    ];
 }

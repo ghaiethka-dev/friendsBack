@@ -6,5 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class Estate_Service extends Model
 {
-    //
+    protected $fillable = [
+        'title',
+        'description',
+        'location',
+    ];
 }
