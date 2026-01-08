@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('location');
             $table->string('lat');
             $table->string('lon');
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
         });
     }
 
