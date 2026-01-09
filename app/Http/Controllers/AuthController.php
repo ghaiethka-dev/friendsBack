@@ -25,7 +25,13 @@ class AuthController extends Controller
         ]);
 
         // ✅ إنشاء Profile تلقائيًا
-        
+         $user->profile()->create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'phone' => $request->phone,
+            'password' => bcrypt($request->password),
+            'address' => null,
+        ]);
 
 
         // إنشاء توكن
@@ -34,6 +40,7 @@ class AuthController extends Controller
         return response()->json([
             'message' => 'تم التسجيل بنجاح',
             'token' => $token,
+            'user' => $user->load('profile'),
         ], 201);
     }
 
