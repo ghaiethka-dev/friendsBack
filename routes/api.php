@@ -10,3 +10,6 @@ Route::get('/user', function (Request $request) {
 Route::post('/register', [App\Http\Controllers\AuthController::class, 'register']);
 Route::post('/login', [App\Http\Controllers\AuthController::class, 'login']);
 Route::post('/logout', [App\Http\Controllers\AuthController::class, 'logout'])->middleware('auth:sanctum');
+
+Route::apiResource('/ads', App\Http\Controllers\AdController::class)->only(['index','store','update'])->middleware('auth:sanctum');
+Route::delete('/ads/{ad}', [App\Http\Controllers\AdController::class, 'destroy'])->middleware('auth:sanctum');

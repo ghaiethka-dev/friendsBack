@@ -11,7 +11,7 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('home__services', function (Blueprint $table) {
+        Schema::create('home_services', function (Blueprint $table) {
             $table->id();
             $table->timestamps();
             $table->string('title');
