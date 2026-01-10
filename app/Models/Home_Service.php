@@ -6,14 +6,17 @@ use Illuminate\Database\Eloquent\Model;
 
 class Home_Service extends Model
 {
+protected $table = 'home_services';
+
     protected $fillable = [
-        'title',
+        'user_id',
         'description',
-        'location',
+        'service_type',
+        'profession',
     ];
     public function images()
     {
-        return $this->hasMany(Image::class);
+        return $this->hasMany(Image::class, 'home_service_id');
     }
 
     public function user()
