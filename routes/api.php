@@ -4,6 +4,7 @@ use App\Http\Controllers\AdController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HomeServiceController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\NotificationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -15,7 +16,7 @@ Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
 
-Route::apiResource('/ads', AdController::class)->only(['index','store','update'])->middleware('auth:sanctum');
+Route::apiResource('/ads', AdController::class)->only(['index', 'store', 'update'])->middleware('auth:sanctum');
 Route::delete('/ads/{ad}', [AdController::class, 'destroy'])->middleware('auth:sanctum');
 
 Route::get('/profile', [ProfileController::class, 'me'])->middleware('auth:sanctum');
@@ -23,3 +24,8 @@ Route::put('/profile', [ProfileController::class, 'update'])->middleware('auth:s
 
 Route::apiResource('home-services', HomeServiceController::class)->middleware('auth:sanctum');
 Route::delete('/home-services/{id}', [HomeServiceController::class, 'destroy'])->middleware('auth:sanctum');
+
+Route::apiResource('notifications', NotificationController::class)->only(['index']);
+Route::patch('/notifications/{notification}/mark-as-read', [NotificationController::class, 'markAsRead']);
+Route::post('/notifications/mark-all-as-read', [NotificationController::class, 'markAllAsRead']);
+Route::get('/user-notifications', [NotificationController::class, 'getUserNotifications']);
