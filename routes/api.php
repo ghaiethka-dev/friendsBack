@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\HomeServiceController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -19,3 +20,6 @@ Route::delete('/ads/{ad}', [AdController::class, 'destroy'])->middleware('auth:s
 
 Route::get('/profile', [ProfileController::class, 'me'])->middleware('auth:sanctum');
 Route::put('/profile', [ProfileController::class, 'update'])->middleware('auth:sanctum');
+
+Route::apiResource('home-services', HomeServiceController::class)->middleware('auth:sanctum');
+Route::delete('/home-services/{id}', [HomeServiceController::class, 'destroy'])->middleware('auth:sanctum');

@@ -14,10 +14,10 @@ return new class extends Migration
         Schema::create('home_services', function (Blueprint $table) {
             $table->id();
             $table->timestamps();
-            $table->string('title');
             $table->text('description');
-            $table->string('location');
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->enum('service_type', ['image_request', 'direct_request']);
+            $table->string('profession')->nullable();
         });
     }
 

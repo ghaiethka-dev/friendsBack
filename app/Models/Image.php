@@ -13,7 +13,7 @@ class Image extends Model
     ];
     public function homeService()
     {
-        return $this->belongsTo(Home_Service::class);
+        return $this->belongsTo(Home_Service::class, 'home_service_id');
     }
     public function estateService()
     {
