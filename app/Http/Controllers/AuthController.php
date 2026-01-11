@@ -4,56 +4,85 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Validator;
 
 class AuthController extends Controller
 {
     /////////////////////// REGISTER
-    public function register(Request $request)
-    {
-        $request->validate([
-            'name' => 'required|string',
-            'email' => 'required|email|unique:users',
-            'password' => 'required|min:6|confirmed',
-        ]);
+   public function register(Request $request)
+{
+    $request->validate([
+        'name' => 'required|string',
+        'email' => 'required|string', // هذا الحقل هو المدخل من المستخدم (إيميل أو هاتف)
+        'password' => 'required|min:6|confirmed',
+        'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+    ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => bcrypt($request->password),
-        ]);
-
-        // ✅ إنشاء Profile تلقائيًا
-         $user->profile()->create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'phone' => $request->phone,
-            'password' => bcrypt($request->password),
-            'address' => null,
-        ]);
-
-
-        // إنشاء توكن
-        $token = $user->createToken('api_token')->plainTextToken;
-
-        return response()->json([
-            'message' => 'تم التسجيل بنجاح',
-            'token' => $token,
-            'user' => $user->load('profile'),
-        ], 201);
+    $input = $request->email;
+    // تحديد هل المدخل إيميل أم هاتف
+    $isEmail = filter_var($input, FILTER_VALIDATE_EMAIL);
+    
+    // التحقق من عدم التكرار يدوياً قبل الإنشاء
+    if ($isEmail) {
+        if (\App\Models\User::where('email', $input)->exists()) {
+            return response()->json(['message' => 'هذا البريد الإلكتروني مسجل مسبقاً'], 422);
+        }
+        $userData = ['email' => $input, 'phone' => null];
+    } else {
+        if (\App\Models\User::where('phone', $input)->exists()) {
+            return response()->json(['message' => 'رقم الهاتف هذا مسجل مسبقاً'], 422);
+        }
+        $userData = ['phone' => $input, 'email' => null];
     }
+
+    // رفع الصورة
+    $imagePath = null;
+    if ($request->hasFile('image')) {
+        $imagePath = $request->file('image')->store('profiles', 'public');
+    }
+
+    // إنشاء المستخدم مع البيانات المحددة (userData)
+    $user = \App\Models\User::create([
+        'name'     => $request->name,
+        'email'    => $userData['email'],
+        'phone'    => $userData['phone'],
+        'password' => bcrypt($request->password),
+    ]);
+
+    // إنشاء البروفايل
+    $user->profile()->create([
+        'name'     => $request->name,
+        'email'    => $userData['email'],
+        'phone'    => $userData['phone'],
+        'password' => bcrypt($request->password),
+        'image'    => $imagePath,
+    ]);
+
+    $token = $user->createToken('api_token')->plainTextToken;
+
+    return response()->json([
+        'message' => 'تم التسجيل بنجاح',
+        'token'   => $token,
+        'user'    => $user->load('profile'),
+    ], 201);
+}
 
     /////////////////////// LOGIN
     public function login(Request $request)
     {
         $request->validate([
-            'email' => 'required|email',
+            'email'    => 'required', // الاسم في البوست مان email، لكن القيمة قد تكون هاتف
             'password' => 'required',
         ]);
 
+        $loginInput = $request->email;
+        
+        // تحديد نوع المدخل للبحث في العمود الصحيح
+        $field = filter_var($loginInput, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
 
-        $user = User::where('email', $request->email)->first();
+        // البحث عن المستخدم بناءً على الحقل المحدد
+        $user = User::where($field, $loginInput)->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
@@ -61,7 +90,7 @@ class AuthController extends Controller
             ], 401);
         }
 
-        // حذف التوكنات القديمة (اختياري)
+        // حذف التوكنات القديمة
         $user->tokens()->delete();
 
         // إنشاء توكن جديد
@@ -69,7 +98,8 @@ class AuthController extends Controller
 
         return response()->json([
             'message' => 'تم تسجيل الدخول بنجاح',
-            'token' => $token,
+            'token'   => $token,
+            'user'    => $user->load('profile'), // إرجاع بيانات المستخدم مع البروفايل
         ]);
     }
 
