@@ -2,101 +2,61 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
-use App\Http\Resources\NotificationResource;
 use App\Models\Notification;
-use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
 
 class NotificationController extends Controller
 {
-    /**
-     * عرض جميع الإشعارات (مع إمكانية التصفية والترتيب)
-     */
     public function index(Request $request)
     {
-        $query = Notification::where('user_id', Auth::id())->with('user');
-
-        if ($request->has('is_read')) {
-            $query->where('is_read', $request->boolean('is_read'));
-        }
-
-        $orderBy = $request->get('order_by', 'created_at');
-        $orderDirection = $request->get('order_direction', 'desc');
-        $query->orderBy($orderBy, $orderDirection);
-
-        $perPage = $request->get('per_page', 15);
-        $notifications = $query->paginate($perPage);
-
-        return NotificationResource::collection($notifications);
+        return response()->json(
+            $request->user()
+                ->notifications()
+                ->latest()
+                ->get()
+        );
     }
 
-    /**
-     * تحديد إشعار كمقروء
-     */
+    public function store(Request $request)
+    {
+        $this->authorize('create', Notification::class);
+
+        $validated = $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'title'   => 'nullable|string|max:255',
+            'message' => 'required|string',
+        ]);
+
+        $notification = Notification::create($validated);
+
+        return response()->json([
+            'message' => 'تم إرسال الإشعار بنجاح',
+            'data'    => $notification,
+        ], 201);
+    }
+
+    public function show(Notification $notification)
+    {
+        $this->authorize('view', $notification);
+
+        return response()->json($notification);
+    }
+
     public function markAsRead(Notification $notification)
     {
-        if ($notification->user_id !== Auth::id()) {
-            return response()->json(['message' => 'غير مصرح'], 403);
-        }
-
-        if ($notification->is_read) {
-            return response()->json(['message' => 'الإشعار مقروء بالفعل'], 400);
-        }
+        $this->authorize('markAsRead', $notification);
 
         $notification->update(['is_read' => true]);
 
-        return new NotificationResource($notification);
+        return response()->json(['message' => 'تم']);
     }
 
-    /**
-     * تحديد كل إشعارات المستخدم كمقروءة
-     */
-    public function markAllAsRead()
+    public function destroy(Notification $notification)
     {
-        Notification::where('user_id', Auth::id())
-            ->where('is_read', false)
-            ->update(['is_read' => true]);
+        $this->authorize('delete', $notification);
 
-        return response()->json(['message' => 'تم تحديد جميع الإشعارات كمقروءة'], 200);
-    }
+        $notification->delete();
 
-    /**
-     * الحصول على إشعارات المستخدم الحالي
-     */
-    public function getUserNotifications(Request $request)
-    {
-        $request->validate([
-            'is_read' => 'sometimes|boolean'
-        ]);
-
-        $query = Notification::where('user_id', Auth::id());
-
-        if ($request->has('is_read')) {
-            $query->where('is_read', $request->boolean('is_read'));
-        }
-
-        $notifications = $query->latest()->get();
-
-        return NotificationResource::collection($notifications);
-    }
-
-    /**
-     * إرسال إشعار للجميع (للاستخدام من قبل الأدمن فقط)
-     */
-    public function sendToAll(Request $request)
-    {
-        $request->validate([
-            'content' => 'required|string|max:1000|min:5',
-        ]);
-
-        $users = \App\Models\User::all();
-
-        foreach ($users as $user) {
-            $user->notifications()->create([
-                'content' => $request->content,
-            ]);
-        }
-
-        return response()->json(['message' => 'تم إرسال الإشعار لجميع المستخدمين']);
+        return response()->json(['message' => 'تم الحذف']);
     }
 }

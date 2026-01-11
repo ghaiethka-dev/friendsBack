@@ -8,24 +8,51 @@ use App\Http\Controllers\NotificationController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
+/*
+|--------------------------------------------------------------------------
+| Auth
+|--------------------------------------------------------------------------
+*/
 
 Route::post('/register', [AuthController::class, 'register']);
-Route::post('/login', [AuthController::class, 'login']);
-Route::post('/logout', [AuthController::class, 'logout'])->middleware('auth:sanctum');
+Route::post('/login',    [AuthController::class, 'login']);
 
-Route::apiResource('/ads', AdController::class)->only(['index', 'store', 'update'])->middleware('auth:sanctum');
-Route::delete('/ads/{ad}', [AdController::class, 'destroy'])->middleware('auth:sanctum');
+Route::middleware('auth:sanctum')->group(function () {
 
-Route::get('/profile', [ProfileController::class, 'me'])->middleware('auth:sanctum');
-Route::put('/profile', [ProfileController::class, 'update'])->middleware('auth:sanctum');
+    Route::post('/logout', [AuthController::class, 'logout']);
 
-Route::apiResource('home-services', HomeServiceController::class)->middleware('auth:sanctum');
-Route::delete('/home-services/{id}', [HomeServiceController::class, 'destroy'])->middleware('auth:sanctum');
+    Route::get('/user', fn(Request $request) => $request->user());
 
-Route::apiResource('notifications', NotificationController::class)->only(['index']);
-Route::patch('/notifications/{notification}/mark-as-read', [NotificationController::class, 'markAsRead']);
-Route::post('/notifications/mark-all-as-read', [NotificationController::class, 'markAllAsRead']);
-Route::get('/user-notifications', [NotificationController::class, 'getUserNotifications']);
+    Route::get('/profile', [ProfileController::class, 'me']);
+    Route::put('/profile', [ProfileController::class, 'update']);
+
+
+    Route::apiResource('ads', AdController::class)
+        ->only(['index', 'store', 'update', 'destroy']);
+
+
+    Route::apiResource('home-services', HomeServiceController::class);
+
+
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications/{notification}', [NotificationController::class, 'show']);
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
+
+    /*
+    |--------------------------------------------------------------------------
+    | Admin Only
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware('role:admin,superadmin')->group(function () {
+        Route::post('/admin/notifications', [NotificationController::class, 'store']);
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Super Admin Only
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware('role:superadmin')->group(function () {
+        Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy']);
+    });
+});
