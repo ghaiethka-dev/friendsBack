@@ -10,63 +10,67 @@ use Illuminate\Support\Facades\Validator;
 class AuthController extends Controller
 {
     /////////////////////// REGISTER
-   public function register(Request $request)
-{
-    $request->validate([
-        'name' => 'required|string',
-        'email' => 'required|string', // هذا الحقل هو المدخل من المستخدم (إيميل أو هاتف)
-        'password' => 'required|min:6|confirmed',
-        'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-    ]);
+    public function register(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string',
+            'email' => 'required|string', // هذا الحقل هو المدخل من المستخدم (إيميل أو هاتف)
+            'password' => 'required|min:6|confirmed',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'governorate' => 'required|string',
+            'city' => 'required|string',
+        ]);
 
-    $input = $request->email;
-    // تحديد هل المدخل إيميل أم هاتف
-    $isEmail = filter_var($input, FILTER_VALIDATE_EMAIL);
-    
-    // التحقق من عدم التكرار يدوياً قبل الإنشاء
-    if ($isEmail) {
-        if (\App\Models\User::where('email', $input)->exists()) {
-            return response()->json(['message' => 'هذا البريد الإلكتروني مسجل مسبقاً'], 422);
+        $input = $request->email;
+        // تحديد هل المدخل إيميل أم هاتف
+        $isEmail = filter_var($input, FILTER_VALIDATE_EMAIL);
+
+        // التحقق من عدم التكرار يدوياً قبل الإنشاء
+        if ($isEmail) {
+            if (\App\Models\User::where('email', $input)->exists()) {
+                return response()->json(['message' => 'هذا البريد الإلكتروني مسجل مسبقاً'], 422);
+            }
+            $userData = ['email' => $input, 'phone' => null];
+        } else {
+            if (\App\Models\User::where('phone', $input)->exists()) {
+                return response()->json(['message' => 'رقم الهاتف هذا مسجل مسبقاً'], 422);
+            }
+            $userData = ['phone' => $input, 'email' => null];
         }
-        $userData = ['email' => $input, 'phone' => null];
-    } else {
-        if (\App\Models\User::where('phone', $input)->exists()) {
-            return response()->json(['message' => 'رقم الهاتف هذا مسجل مسبقاً'], 422);
+
+        // رفع الصورة
+        $imagePath = null;
+        if ($request->hasFile('image')) {
+            $imagePath = $request->file('image')->store('profiles', 'public');
         }
-        $userData = ['phone' => $input, 'email' => null];
+
+        // إنشاء المستخدم مع البيانات المحددة (userData)
+        $user = \App\Models\User::create([
+            'name'     => $request->name,
+            'email'    => $userData['email'],
+            'phone'    => $userData['phone'],
+            'password' => bcrypt($request->password),
+        ]);
+
+        // إنشاء البروفايل
+        $user->profile()->create([
+            'name'     => $request->name,
+            'email'    => $userData['email'],
+            'phone'    => $userData['phone'],
+            'password' => bcrypt($request->password),
+            'image'    => $imagePath,
+            'governorate' => $request->governorate,
+            'city'        => $request->city,
+        ]);
+
+        $token = $user->createToken('api_token')->plainTextToken;
+
+        return response()->json([
+            'message' => 'تم التسجيل بنجاح',
+            'token'   => $token,
+            'user'    => $user->load('profile'),
+        ], 201);
     }
-
-    // رفع الصورة
-    $imagePath = null;
-    if ($request->hasFile('image')) {
-        $imagePath = $request->file('image')->store('profiles', 'public');
-    }
-
-    // إنشاء المستخدم مع البيانات المحددة (userData)
-    $user = \App\Models\User::create([
-        'name'     => $request->name,
-        'email'    => $userData['email'],
-        'phone'    => $userData['phone'],
-        'password' => bcrypt($request->password),
-    ]);
-
-    // إنشاء البروفايل
-    $user->profile()->create([
-        'name'     => $request->name,
-        'email'    => $userData['email'],
-        'phone'    => $userData['phone'],
-        'password' => bcrypt($request->password),
-        'image'    => $imagePath,
-    ]);
-
-    $token = $user->createToken('api_token')->plainTextToken;
-
-    return response()->json([
-        'message' => 'تم التسجيل بنجاح',
-        'token'   => $token,
-        'user'    => $user->load('profile'),
-    ], 201);
-}
 
     /////////////////////// LOGIN
     public function login(Request $request)
@@ -77,7 +81,7 @@ class AuthController extends Controller
         ]);
 
         $loginInput = $request->email;
-        
+
         // تحديد نوع المدخل للبحث في العمود الصحيح
         $field = filter_var($loginInput, FILTER_VALIDATE_EMAIL) ? 'email' : 'phone';
 
