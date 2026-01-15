@@ -45,6 +45,17 @@ class User extends Authenticatable
         return $this->hasMany(Notification::class);
     }
 
+    public function eventsAsUser()
+    {
+        return $this->hasMany(Event::class, 'user_id');
+    }
+
+    public function eventsAsWorker()
+    {
+        return $this->hasMany(Event::class, 'worker_id');
+    }
+
+
     public function isUser()
     {
         return $this->role === 'user';
