@@ -12,8 +12,6 @@ class Profile extends Model
         'password',
         'phone',
         'image',
-        'governorate',
-        'city',
         'user_id',
     ];
     public function user()

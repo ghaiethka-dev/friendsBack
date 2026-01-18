@@ -7,20 +7,44 @@ use Illuminate\Http\Request;
 
 class AdController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $ads=Ad::Where('active',1)->latest()->get();
-        return response()->json(["ads" => $ads]);
+        $user = $request->user();
+        $query = Ad::where('active', 1)->latest();
+
+        if (!$user) {
+            return response()->json(["ads" => $query->get()]);
+        }
+
+        if ($user->role === 'super_admin') {
+        } 
+        elseif (in_array($user->role, ['admin', 'user'])) {
+            $query->where('governorate', $user->governorate);
+        } 
+        elseif ($user->role === 'city_admin') {
+            $query->where('city', $user->city);
+        }
+
+        return response()->json(["ads" => $query->get()]);
     }
+
     public function store(Request $request)
     {
-    $this->authorize('create', Ad::class);
+        $this->authorize('create', Ad::class);
 
-        $data = [];
+        $request->validate([
+            'title'       => 'required|string',
+            'description' => 'required|string',
+            'city'        => 'required|string', 
+            'image'       => 'nullable|image'
+        ]);
 
-        $data['title'] = $request->title;
-        $data['description'] = $request->description;
+        $user = $request->user();
+
+        $data = $request->only(['title', 'description', 'city']);
         $data['active'] = $request->active ? 1 : 0;
+        
+        $data['governorate'] = $user->governorate;
 
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('ads', 'public');
@@ -29,21 +53,16 @@ class AdController extends Controller
         $ad = Ad::create($data);
 
         return response()->json([
-            'message' => 'تم إنشاء الإعلان بنجاح',
+            'message' => 'تم إنشاء الإعلان بنجاح في محافظة ' . $user->governorate,
             'ad' => $ad
         ]);
     }
-
 
     public function update(Request $request, Ad $ad)
     {
         $this->authorize('update', $ad);
 
-        $data = [];
-
-        $data['title'] = $request->title;
-        $data['description'] = $request->description;
-        $data['active'] = $request->active ? 1 : 0;
+        $data = $request->only(['title', 'description', 'active', 'city']);
 
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('ads', 'public');
@@ -57,16 +76,10 @@ class AdController extends Controller
         ]);
     }
 
-
     public function destroy(Ad $ad)
     {
         $this->authorize('delete', $ad);
-
         $ad->delete();
-
-        return response()->json([
-            'message' => 'تم حذف الإعلان بنجاح'
-        ]);
+        return response()->json(['message' => 'تم حذف الإعلان بنجاح']);
     }
-        
 }

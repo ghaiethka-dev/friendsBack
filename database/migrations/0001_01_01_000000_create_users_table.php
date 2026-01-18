@@ -18,7 +18,9 @@ return new class extends Migration
             $table->string('phone')->nullable()->unique();
             $table->timestamp('email_verified_at')->nullable();
             $table->string('password');
-            $table->enum('role', ['user', 'city_admin','admin','super_admin'])->default('user');
+            $table->enum('role', ['user', 'city_admin', 'admin', 'super_admin'])->default('user');
+            $table->string('governorate')->nullable(); // المحافظة
+            $table->string('city')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });
