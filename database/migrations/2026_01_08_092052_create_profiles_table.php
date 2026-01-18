@@ -18,8 +18,6 @@ return new class extends Migration
             $table->string('password');
             $table->string('phone')->nullable();
             $table->string('image')->nullable();
-            $table->string('governorate')->nullable();
-            $table->string('city')->nullable();
             $table->timestamps();
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
         });

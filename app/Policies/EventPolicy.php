@@ -9,66 +9,46 @@ class EventPolicy
 {
     public function before(User $user)
     {
-        if ($user->isSuperAdmin()) {
+        if ($user->role === 'super_admin') {
             return true;
         }
         return null;
     }
-    /**
-     * عرض كل الأحداث
-     */
-    public function viewAny(?User $user): bool
+
+    
+    public function viewAny(User $user): bool
     {
         return true;
     }
 
-    /**
-     * عرض حدث واحد
-     */
-    public function view(?User $user, Event $event): bool
+   
+    public function view(User $user, Event $event): bool
     {
-        return true;
+    
+        if (in_array($user->role, ['admin', 'user', 'city_admin'])) {
+            return $user->governorate === $event->governorate;
+        }
+
+        return false;
     }
 
-    /**
-     * إنشاء حدث
-     */
+   
     public function create(User $user): bool
     {
-        return $user->role === 'city_admin';
+        return $user->role === 'admin';
     }
 
-    /**
-     * تعديل حدث
-     */
+   
     public function update(User $user, Event $event): bool
     {
-        return $user->role === 'city_admin'
+        return $user->role === 'admin' 
             && $user->id === $event->worker_id;
     }
 
-    /**
-     * حذف حدث
-     */
+    
     public function delete(User $user, Event $event): bool
     {
-        return ($user->role === 'city_admin' && $user->id === $event->worker_id)
-            || $user->role === 'admin';
-    }
-
-    /**
-     * الاستعادة (لو استخدمت soft delete)
-     */
-    public function restore(User $user, Event $event): bool
-    {
-        return in_array($user->role, ['admin', 'super_admin']);
-    }
-
-    /**
-     * الحذف النهائي
-     */
-    public function forceDelete(User $user, Event $event): bool
-    {
-        return $user->role === 'super_admin';
+        return $user->role === 'admin' 
+            && $user->id === $event->worker_id;
     }
 }

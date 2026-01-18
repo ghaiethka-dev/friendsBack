@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('ads', function (Blueprint $table) {
             $table->id();
+            $table->string('governorate')->nullable();
             $table->string('title')->nullable();
             $table->string('description')->nullable();
             $table->string('image')->nullable();
