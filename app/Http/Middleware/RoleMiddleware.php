@@ -7,21 +7,27 @@ use Illuminate\Http\Request;
 
 class RoleMiddleware
 {
+    /**
+     * Handle an incoming request.
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @param  \Closure  $next
+     * @param  string  ...$roles  (هنا يتم استقبال الأدوار الممررة من ملف الروابط)
+     * @return mixed
+     */
     public function handle(Request $request, Closure $next, ...$roles)
     {
-        $user = $request->user();
+        $user = $request->user(); // جلب المستخدم المسجل دخول
 
-        // إذا لم يكن مسجّل دخول
-        if (! $user) {
+        if (!$user) {
             return response()->json([
-                'message' => 'Unauthenticated'
+                'message' => 'يجب تسجيل الدخول أولاً'
             ], 401);
         }
 
-        // إذا لم يكن لديه الدور المطلوب
-        if (! in_array($user->role, $roles)) {
+        if (!in_array($user->role, $roles)) {
             return response()->json([
-                'message' => 'Forbidden'
+                'message' => 'Forbidden: غير مسموح لك بالوصول لهذه الصلاحية'
             ], 403);
         }
 
