@@ -14,15 +14,19 @@ class EventController extends Controller
         $user = $request->user();
         $query = Event::latest()->with(['user', 'worker']);
 
-        if ($user->role === 'super_admin') {
-        } 
-        elseif (in_array($user->role, ['admin', 'user'])) {
-            $query->where('governorate', $user->governorate);
-        } 
-        elseif ($user->role === 'city_admin') {
-            $query->where('city', $user->city);
+        if ($user) {
+            if ($user->role === 'super_admin') {
+                // السوبر أدمن يرى كل شيء
+            } elseif (in_array($user->role, ['admin', 'user'])) {
+                $query->where('governorate', $user->governorate);
+            } elseif ($user->role === 'city_admin') {
+                $query->where('city', $user->city);
+            }
+        } else {
+            // في حال كان زائراً (Guest):
+            // يمكنك هنا اختيار إظهار كل الأحداث أو أحداث معينة
+            // حالياً سيظهر كل الأحداث لأننا لم نضف أي شرط where
         }
-
         return $query->paginate(10);
     }
 
@@ -38,14 +42,14 @@ class EventController extends Controller
         $this->authorize('create', Event::class);
 
         $request->validate([
-            'user_id'      => 'required|exists:users,id',
+            'user_id'      => 'nullable|exists:users,id',
             'description'  => 'required|string',
-            'city'         => 'required|string', 
+            'city'         => 'required|string',
             'before_image' => 'nullable|image',
             'after_image'  => 'nullable|image',
         ]);
 
-        $worker = $request->user(); 
+        $worker = $request->user();
 
         $client = \App\Models\User::findOrFail($request->user_id);
 
@@ -58,10 +62,10 @@ class EventController extends Controller
             'description'  => $request->description,
             'before_image' => $before,
             'after_image'  => $after,
-            
-            'governorate'  => $worker->governorate, 
-            
-            'city'         => $request->city, 
+
+            'governorate'  => $worker->governorate,
+
+            'city'         => $request->city,
         ]);
 
         return response()->json([
