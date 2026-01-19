@@ -9,12 +9,12 @@ class NotificationController extends Controller
 {
     public function index(Request $request)
     {
-        return response()->json(
-            $request->user()
-                ->notifications()
-                ->latest()
-                ->get()
-        );
+        $notifications = $request->user()
+            ->notifications()
+            ->latest()
+            ->paginate(15);
+
+        return response()->json($notifications);
     }
 
     public function store(Request $request)
@@ -48,7 +48,7 @@ class NotificationController extends Controller
 
         $notification->update(['is_read' => true]);
 
-        return response()->json(['message' => 'تم']);
+        return response()->json(['message' => 'تم تحديد الإشعار كمقروء']);
     }
 
     public function destroy(Notification $notification)
