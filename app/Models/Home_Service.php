@@ -13,6 +13,10 @@ protected $table = 'home_services';
         'description',
         'service_type',
         'profession',
+        'phone',
+        'address',
+        'latitude',
+        'longitude'
     ];
     public function images()
     {
