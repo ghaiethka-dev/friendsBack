@@ -18,6 +18,10 @@ return new class extends Migration
             $table->foreignId('user_id')->constrained()->onDelete('cascade');
             $table->enum('service_type', ['image_request', 'direct_request']);
             $table->string('profession')->nullable();
+            $table->string('phone')->nullable();
+            $table->string('address')->nullable();
+            $table->double('latitude')->nullable();
+            $table->double('longitude')->nullable();
         });
     }
 

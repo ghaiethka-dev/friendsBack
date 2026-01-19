@@ -28,46 +28,58 @@ class HomeServiceController extends Controller
     }
 
     public function store(Request $request)
-    {
-        $request->validate([
-            'service_type' => 'required|in:image_request,direct_request',
-            'description'  => 'nullable|string',
-            'profession'   => 'nullable|string',
-            'images.*'     => 'nullable|image|mimes:jpg,jpeg,png'
-        ]);
+{
+    // 1. تحديث التحقق من البيانات ليشمل الهاتف والموقع
+    $request->validate([
+        'service_type' => 'required|in:image_request,direct_request',
+        'description'  => 'nullable|string',
+        'profession'   => 'nullable|string',
+        'phone'        => 'required|string',      // إجباري
+        'address'      => 'nullable|string',      // اختياري
+        'latitude'     => 'nullable|numeric',     // رقمي
+        'longitude'    => 'nullable|numeric',     // رقمي
+        'images.*'     => 'nullable|image|mimes:jpg,jpeg,png'
+    ]);
 
-        // تحقق من الطلب المباشر
-        if ($request->service_type === 'direct_request' && !$request->profession) {
-            return response()->json([
-                'message' => 'يجب اختيار نوع الحرفة'
-            ], 422);
-        }
-
-        $homeService = Home_Service::create([
-            'user_id'      => Auth::id(),
-            'service_type' => $request->service_type,
-            'description'  => $request->description,
-            'profession'   => $request->profession,
-        ]);
-
-        // حفظ الصور
-        if ($request->service_type === 'image_request' && $request->hasFile('images')) {
-            foreach ($request->file('images') as $image) {
-                $path = $image->store('home_services', 'public');
-
-                Image::create([
-                    'user_id' => Auth::id(),
-                    'image_path' => $path,
-                    'home_service_id' => $homeService->id,
-                ]);
-            }
-        }
-
+    // تحقق من الطلب المباشر
+    if ($request->service_type === 'direct_request' && !$request->profession) {
         return response()->json([
-            'message' => 'تم إنشاء الطلب بنجاح',
-            'data' => $homeService->load('images')
-        ], 201);
+            'message' => 'يجب اختيار نوع الحرفة'
+        ], 422);
     }
+
+    // 2. إضافة الحقول الجديدة هنا ليتم حفظها
+    $homeService = Home_Service::create([
+        'user_id'      => Auth::id(),
+        'service_type' => $request->service_type,
+        'description'  => $request->description,
+        'profession'   => $request->profession,
+        
+        // --- الإضافات الجديدة ---
+        'phone'        => $request->phone,
+        'address'      => $request->address,
+        'latitude'     => $request->latitude,
+        'longitude'    => $request->longitude,
+    ]);
+
+    // حفظ الصور (كما هو سابقاً)
+    if ($request->service_type === 'image_request' && $request->hasFile('images')) {
+        foreach ($request->file('images') as $image) {
+            $path = $image->store('home_services', 'public');
+
+            Image::create([
+                'user_id' => Auth::id(),
+                'image_path' => $path,
+                'home_service_id' => $homeService->id,
+            ]);
+        }
+    }
+
+    return response()->json([
+        'message' => 'تم إنشاء الطلب بنجاح',
+        'data' => $homeService->load('images')
+    ], 201);
+}
 
 
     public function update(Request $request, $id)
