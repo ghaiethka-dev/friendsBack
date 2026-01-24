@@ -16,11 +16,15 @@ class ProfileController extends Controller
     {
         $user = Auth::user();
 
-        return response()->json([
-            'name'  => $user->name,
-            'email' => $user->email,
-            'phone' => optional($user->profile)->phone,
-        ]);
+       return response()->json([
+        'id'          => $user->id,
+        'name'        => $user->name,
+        'email'       => $user->email,
+        'phone'       => $user->phone,
+        'governorate' => $user->governorate, // إرجاع القيمة من جدول users
+        'city'        => $user->city,        // إرجاع القيمة من جدول users
+        'image'       => optional($user->profile)->image, // من جدول البروفايل
+    ]);
     }
 
     public function update(Request $request)
@@ -34,6 +38,9 @@ class ProfileController extends Controller
             'email' => 'sometimes|string|email|max:255|unique:users,email,' . $user->id,
             'phone' => 'sometimes|string|max:20',
             'password' => 'sometimes|string|min:8|confirmed',
+            'city' => 'sometimes|string',
+    'governorate' => 'sometimes|string',
+    'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
         if ($request->has('name')) {
@@ -47,6 +54,16 @@ class ProfileController extends Controller
         if ($request->has('password')) {
             $user->password = Hash::make($request->password);
         }
+        $profile = $user->profile;
+        if ($request->has('city')) {
+        $profile->city = $request->city;
+    }
+    
+    if ($request->hasFile('image')) {
+        // كود رفع الصورة وتحديث المسار
+        $path = $request->file('image')->store('profiles', 'public');
+        $profile->image = $path;
+    }
 
         $user->save();
 
