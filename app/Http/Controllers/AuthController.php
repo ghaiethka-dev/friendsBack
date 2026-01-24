@@ -61,6 +61,8 @@ class AuthController extends Controller
             'phone'    => $userData['phone'],
             'password' => bcrypt($request->password),
             'image'    => $imagePath,
+            'governorate' => $request->governorate, // أضف هذا السطر
+            'city'        => $request->city,
         ]);
 
         $token = $user->createToken('api_token')->plainTextToken;

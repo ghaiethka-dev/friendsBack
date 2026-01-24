@@ -9,12 +9,13 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-    public function up(): void
-    {
-        Schema::table('profiles', function (Blueprint $table) {
-            //
-        });
-    }
+    public function up()
+{
+    Schema::table('profiles', function (Blueprint $table) {
+        $table->string('city')->nullable();
+        $table->string('governorate')->nullable(); // تأكد أن المحافظة موجودة أيضاً
+    });
+}
 
     /**
      * Reverse the migrations.
