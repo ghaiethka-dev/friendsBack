@@ -50,6 +50,8 @@ class AuthController extends Controller
             'email'    => $userData['email'],
             'phone'    => $userData['phone'],
             'password' => bcrypt($request->password),
+            'governorate' => $request->governorate, // أضف هذا السطر
+            'city'        => $request->city,        // أضف هذا السطر
         ]);
 
         // إنشاء البروفايل
@@ -59,8 +61,6 @@ class AuthController extends Controller
             'phone'    => $userData['phone'],
             'password' => bcrypt($request->password),
             'image'    => $imagePath,
-            'governorate' => $request->governorate,
-            'city'        => $request->city,
         ]);
 
         $token = $user->createToken('api_token')->plainTextToken;

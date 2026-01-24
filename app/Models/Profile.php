@@ -13,6 +13,8 @@ class Profile extends Model
         'phone',
         'image',
         'user_id',
+        'governorate', // ✅ أضف هذا
+        'city',        // ✅ أضف هذا
     ];
     public function user()
     {
