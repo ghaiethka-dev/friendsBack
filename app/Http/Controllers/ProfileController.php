@@ -34,7 +34,7 @@ public function update(Request $request)
     $request->validate([
         'name' => 'sometimes|string|max:255',
         'email' => 'sometimes|string|email|max:255|unique:users,email,' . $user->id,
-        'phone' => 'sometimes|string|max:20|unique:users,phone,' . $user->id,
+        'phone' => 'sometimes|string|nullable|max:20|unique:users,phone,' . $user->id,
         'password' => 'sometimes|string|min:8|confirmed',
         'city' => 'sometimes|string',
         'governorate' => 'sometimes|string',
