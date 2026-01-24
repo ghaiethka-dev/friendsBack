@@ -58,7 +58,10 @@ class ProfileController extends Controller
         if ($request->has('city')) {
         $profile->city = $request->city;
     }
-    
+    if ($request->has('governorate')) {
+        $profile->governorate = $request->governorate;
+    }
+            
     if ($request->hasFile('image')) {
         // كود رفع الصورة وتحديث المسار
         $path = $request->file('image')->store('profiles', 'public');
