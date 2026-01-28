@@ -16,9 +16,9 @@ class AuthController extends Controller
             'name' => 'required|string',
             'email' => 'required|string', // هذا الحقل هو المدخل من المستخدم (إيميل أو هاتف)
             'password' => 'required|min:6|confirmed',
-            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'governorate' => 'required|string',
             'city' => 'required|string',
+            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:4096',
         ]);
 
         $input = $request->email;

@@ -31,7 +31,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', fn(Request $request) => $request->user());
-
+         Route::get('/user', [App\Http\Controllers\ProfileController::class, 'me']);
     Route::get('/profile', [ProfileController::class, 'me']);
     Route::put('/profile', [ProfileController::class, 'update']);
 
@@ -47,7 +47,7 @@ Route::middleware('auth:sanctum')->group(function () {
     |--------------------------------------------------------------------------
     */
     Route::middleware('role:admin,super_admin')->group(function () {
-        
+
         Route::post('/admin/notifications', [NotificationController::class, 'store']);
 
         Route::post('/events', [EventController::class, 'store']);
@@ -64,7 +64,7 @@ Route::middleware('auth:sanctum')->group(function () {
     */
     Route::middleware('role:super_admin')->group(function () {
         Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy']);
-        
+
     });
 
 });
