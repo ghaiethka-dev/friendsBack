@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use App\Http\Requests\StoreProfileRequest;
 use App\Http\Requests\UpdateProfileRequest;
 use Illuminate\Support\Facades\Hash;
-
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 
 class ProfileController extends Controller
@@ -23,7 +23,7 @@ class ProfileController extends Controller
         'phone'       => $user->phone,
         'governorate' => $user->governorate, // إرجاع القيمة من جدول users
         'city'        => $user->city,        // إرجاع القيمة من جدول users
-        'image'       => optional($user->profile)->image, // من جدول البروفايل
+       'image'       => $user->profile ? $user->profile->image : null,
     ]);
     }
 public function update(Request $request)
@@ -38,7 +38,7 @@ public function update(Request $request)
         'password' => 'sometimes|string|min:8|confirmed',
         'city' => 'sometimes|string',
         'governorate' => 'sometimes|string',
-        'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+        'image' => 'nullable|image|mimes:jpg,jpeg,png|max:4096',
     ]);
 
     // 1. تحديث بيانات جدول users
@@ -81,10 +81,17 @@ public function update(Request $request)
     if ($request->has('city')) {
         $profile->city = $request->city;
     }
-    if ($request->hasFile('image')) {
-        $path = $request->file('image')->store('profiles', 'public');
-        $profile->image = $path;
-    }
+   // 4. منطق تحديث الصورة (الأهم)
+        if ($request->hasFile('image')) {
+            // أ) حذف الصورة القديمة إذا كانت موجودة
+            if ($profile->image && Storage::disk('public')->exists($profile->image)) {
+                Storage::disk('public')->delete($profile->image);
+            }
+
+            // ب) رفع الصورة الجديدة
+            $path = $request->file('image')->store('profiles', 'public');
+            $profile->image = $path;
+        }
 
     $profile->save(); // حفظ التغييرات في جدول profiles
 
