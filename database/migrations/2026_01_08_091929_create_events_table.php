@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->foreignId('user_id')->constrained('users')->comment('صاحب الطلب');
             $table->foreignId('worker_id')->constrained('users')->comment('مقدم الخدمة (city_admin)');
+            $table->string('title');
             $table->text('description');
             $table->string('before_image')->nullable();
             $table->string('after_image')->nullable();
