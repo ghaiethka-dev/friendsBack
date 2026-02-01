@@ -43,6 +43,7 @@ class EventController extends Controller
 
         $request->validate([
             'user_id'      => 'nullable|exists:users,id',
+            'title'  => 'required|string',
             'description'  => 'required|string',
             'city'         => 'required|string',
             'before_image' => 'nullable|image',
@@ -59,6 +60,7 @@ class EventController extends Controller
         $event = Event::create([
             'user_id'      => $client->id,
             'worker_id'    => $worker->id,
+            'title'  => $request->title,
             'description'  => $request->description,
             'before_image' => $before,
             'after_image'  => $after,
@@ -78,7 +80,7 @@ class EventController extends Controller
     {
         $this->authorize('update', $event);
 
-        $event->update($request->only(['description', 'city'])); // يمكن تعديل المدينة أيضاً
+        $event->update($request->only(['title','description', 'city'])); // يمكن تعديل المدينة أيضاً
 
         return response()->json(['message' => 'تم التحديث بنجاح']);
     }
