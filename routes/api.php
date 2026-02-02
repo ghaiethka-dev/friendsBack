@@ -55,6 +55,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/events/{event}', [EventController::class, 'destroy']);
 
         Route::apiResource('ads', AdController::class)->except(['index']);
+        Route::delete('/ads/{ad}', [AdController::class, 'destroy']);
     });
 
     /*
