@@ -11,7 +11,7 @@ class HomeServiceController extends Controller
 {
     public function index()
     {
-        $services = Home_Service::with('images')->latest()->get();
+        $services = Home_Service::with('images', 'user')->latest()->get();
 
         return response()->json([
             'data' => $services
