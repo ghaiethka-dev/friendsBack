@@ -21,9 +21,10 @@ class ProfileController extends Controller
         'name'        => $user->name,
         'email'       => $user->email,
         'phone'       => $user->phone,
+        'role'        => $user->role,
         'governorate' => $user->governorate, // إرجاع القيمة من جدول users
         'city'        => $user->city,        // إرجاع القيمة من جدول users
-       'image'       => $user->profile ? $user->profile->image : null,
+        'image'       => $user->profile ? $user->profile->image : null,
     ]);
     }
 public function update(Request $request)
