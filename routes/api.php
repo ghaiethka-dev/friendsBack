@@ -2,11 +2,70 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\AdController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\EventController;
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\HomeServiceController;
 
-Route::get('/user', function (Request $request) {
-    return $request->user();
-})->middleware('auth:sanctum');
+/*
+|--------------------------------------------------------------------------
+| 1. Public Routes (الكل يراها بما في ذلك الزوار)
+|--------------------------------------------------------------------------
+*/
+Route::post('/register', [AuthController::class, 'register']);
+Route::post('/login',    [AuthController::class, 'login']);
 
-Route::post('/register', [App\Http\Controllers\AuthController::class, 'register']);
-Route::post('/login', [App\Http\Controllers\AuthController::class, 'login']);
-Route::post('/logout', [App\Http\Controllers\AuthController::class, 'logout'])->middleware('auth:sanctum');
+Route::get('/events', [EventController::class, 'index']);
+Route::get('/events/{event}', [EventController::class, 'show']);
+Route::get('/ads', [AdController::class, 'index']);
+
+
+/*
+|--------------------------------------------------------------------------
+| 2. Protected Routes (تحتاج تسجيل دخول - أي Role)
+|--------------------------------------------------------------------------
+*/
+Route::middleware('auth:sanctum')->group(function () {
+
+    Route::post('/logout', [AuthController::class, 'logout']);
+    Route::get('/user', fn(Request $request) => $request->user());
+    Route::get('/user', [App\Http\Controllers\ProfileController::class, 'me']);
+    Route::get('/profile', [ProfileController::class, 'me']);
+    Route::put('/profile', [ProfileController::class, 'update']);
+
+    Route::get('/notifications', [NotificationController::class, 'index']);
+    Route::get('/notifications/{notification}', [NotificationController::class, 'show']);
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
+
+    Route::apiResource('home-services', HomeServiceController::class);
+
+    /*
+    |--------------------------------------------------------------------------
+    | 3. Admin & Super Admin Only (إدارة المحتوى)
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware('role:admin,super_admin')->group(function () {
+
+        Route::post('/admin/notifications', [NotificationController::class, 'store']);
+
+        Route::post('/events', [EventController::class, 'store']);
+        Route::put('/events/{event}', [EventController::class, 'update']);
+        Route::delete('/events/{event}', [EventController::class, 'destroy']);
+
+        Route::apiResource('ads', AdController::class)->except(['index']);
+        Route::delete('/ads/{ad}', [AdController::class, 'destroy']);
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | 4. Super Admin Only (صلاحيات حساسة جداً)
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware('role:super_admin')->group(function () {
+        Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy']);
+
+    });
+
+});
