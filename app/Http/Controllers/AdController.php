@@ -17,11 +17,9 @@ class AdController extends Controller
         }
 
         if ($user->role === 'super_admin') {
-        } 
-        elseif (in_array($user->role, ['admin', 'user'])) {
+        } elseif (in_array($user->role, ['admin', 'user'])) {
             $query->where('governorate', $user->governorate);
-        } 
-        elseif ($user->role === 'city_admin') {
+        } elseif ($user->role === 'city_admin') {
             $query->where('city', $user->city);
         }
 
@@ -35,7 +33,7 @@ class AdController extends Controller
         $request->validate([
             'title'       => 'required|string',
             'description' => 'required|string',
-            'city'        => 'required|string', 
+            'governorate'        => 'required|string',
             'image'       => 'nullable|image'
         ]);
 
@@ -43,12 +41,12 @@ class AdController extends Controller
 
         $data = $request->only(['title', 'description', 'city']);
         $data['active'] = $request->active ? 1 : 0;
-        
+
         $data['governorate'] = $user->governorate;
 
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('ads', 'public');
-        }   
+        }
 
         $ad = Ad::create($data);
 
@@ -66,7 +64,7 @@ class AdController extends Controller
 
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('ads', 'public');
-        }   
+        }
 
         $ad->update($data);
 

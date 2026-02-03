@@ -45,26 +45,29 @@ class AuthController extends Controller
         }
 
         // إنشاء المستخدم مع البيانات المحددة (userData)
+        // ... داخل دالة register بعد رفع الصورة
+
+        // إنشاء المستخدم (جدول users)
         $user = \App\Models\User::create([
-            'name'     => $request->name,
-            'email'    => $userData['email'],
-            'phone'    => $userData['phone'],
-            'password' => bcrypt($request->password),
-            'governorate' => $request->governorate, // أضف هذا السطر
-            'city'        => $request->city,        // أضف هذا السطر
+            'name'        => $request->name,
+            'email'       => $userData['email'],
+            'phone'       => $userData['phone'],
+            'password'    => bcrypt($request->password),
+            'governorate' => $request->governorate,
+            'city'        => $request->city,
+            'role'        => 'user', // قم بتحديد الرتبة هنا يدوياً أو اجعلها افتراضية في قاعدة البيانات
         ]);
 
-        // إنشاء البروفايل
+        // إنشاء البروفايل (جدول profiles)
         $user->profile()->create([
-            'name'     => $request->name,
-            'email'    => $userData['email'],
-            'phone'    => $userData['phone'],
-            'password' => bcrypt($request->password),
-            'image'    => $imagePath,
-            'governorate' => $request->governorate, // أضف هذا السطر
+            'name'        => $request->name,
+            'email'       => $userData['email'],
+            'phone'       => $userData['phone'],
+            'image'       => $imagePath,
+            'role'        => $user->role, // خذ القيمة من المستخدم الذي أنشأته للتو
+            'governorate' => $request->governorate,
             'city'        => $request->city,
         ]);
-
         $token = $user->createToken('api_token')->plainTextToken;
 
         return response()->json([
