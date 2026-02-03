@@ -10,6 +10,7 @@ class Ad extends Model
         'title',
         'image',
         'description',
+        'governorate',
         'active',
     ];
 }
