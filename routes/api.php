@@ -19,7 +19,7 @@ Route::post('/login',    [AuthController::class, 'login']);
 
 Route::get('/events', [EventController::class, 'index']);
 Route::get('/events/{event}', [EventController::class, 'show']);
-Route::get('/ads', [AdController::class, 'index']);
+
 
 
 /*
@@ -40,7 +40,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
 
     Route::apiResource('home-services', HomeServiceController::class);
-
+    Route::get('/ads', [AdController::class, 'index']);
     /*
     |--------------------------------------------------------------------------
     | 3. Admin & Super Admin Only (إدارة المحتوى)
