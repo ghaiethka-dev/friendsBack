@@ -9,9 +9,34 @@ use Illuminate\Support\Facades\Auth;
 
 class HomeServiceController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $services = Home_Service::with('images', 'user')->latest()->get();
+        // 1. جلب بيانات الأدمن الحالي
+        $currentUser = $request->user();
+
+        // 2. تجهيز الاستعلام
+        $query = Home_Service::with('images', 'user')->latest();
+
+        // 3. تطبيق شروط الفلترة حسب الرتبة
+        if ($currentUser->role === 'super_admin') {
+            // السوبر أدمن: يرى كل الطلبات في العراق
+        } 
+        elseif ($currentUser->role === 'admin') {
+            // أدمن المحافظة: يرى كل الطلبات التابعة لمحافظته (بغض النظر عن المدينة)
+            $query->whereHas('user', function($q) use ($currentUser) {
+                $q->where('governorate', $currentUser->governorate);
+            });
+        } 
+        elseif ($currentUser->role === 'city_admin') {
+            // أدمن المدينة: يرى الطلبات التي في مدينته + محافظته حصراً
+            $query->whereHas('user', function($q) use ($currentUser) {
+                $q->where('governorate', $currentUser->governorate) // لزيادة الأمان
+                  ->where('city', $currentUser->city);
+            });
+        }
+
+        // 4. تنفيذ الاستعلام
+        $services = $query->get();
 
         return response()->json([
             'data' => $services
