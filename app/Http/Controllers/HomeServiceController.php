@@ -20,13 +20,13 @@ class HomeServiceController extends Controller
         // 3. تطبيق شروط الفلترة حسب الرتبة
         if ($currentUser->role === 'super_admin') {
             // السوبر أدمن: يرى كل الطلبات في العراق
-        } 
+        }
         elseif ($currentUser->role === 'admin') {
             // أدمن المحافظة: يرى كل الطلبات التابعة لمحافظته (بغض النظر عن المدينة)
             $query->whereHas('user', function($q) use ($currentUser) {
                 $q->where('governorate', $currentUser->governorate);
             });
-        } 
+        }
         elseif ($currentUser->role === 'city_admin') {
             // أدمن المدينة: يرى الطلبات التي في مدينته + محافظته حصراً
             $query->whereHas('user', function($q) use ($currentUser) {
@@ -79,7 +79,7 @@ class HomeServiceController extends Controller
         'service_type' => $request->service_type,
         'description'  => $request->description,
         'profession'   => $request->profession,
-        
+
         // --- الإضافات الجديدة ---
         'phone'        => $request->phone,
         'address'      => $request->address,
