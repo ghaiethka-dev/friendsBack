@@ -107,43 +107,19 @@ class HomeServiceController extends Controller
 }
 
 public function updateStatus(Request $request, $id)
-    {
-        $service = Home_Service::findOrFail($id);
+{
+    $request->validate([
+        'status' => 'required|in:pending,accepted,rejected'
+    ]);
 
-        // التحقق من المدخلات
-        $request->validate([
-            'status' => 'required|in:pending,accepted,rejected',
-        ]);
+    $service = Home_Service::findOrFail($id);
+    $service->update(['status' => $request->status]);
 
-        // تحديث الحالة
-        $service->update([
-            'status' => $request->status
-        ]);
-
-        // --- (اختياري) إرسال إشعار للمستخدم بتغير الحالة ---
-        // بما أن لديك NotificationController وموديل Notification
-        $message = '';
-        if ($request->status === 'accepted') {
-            $message = 'تم قبول طلبك للخدمة المنزلية';
-        } elseif ($request->status === 'rejected') {
-            $message = 'عذراً، تم رفض طلبك للخدمة المنزلية';
-        }
-
-        if ($message) {
-            \App\Models\Notification::create([
-                'user_id' => $service->user_id, // صاحب الطلب
-                'title'   => 'تحديث حالة الطلب',
-                'message' => $message,
-                'is_read' => false,
-            ]);
-        }
-        // ----------------------------------------------------
-
-        return response()->json([
-            'message' => 'تم تغيير حالة الطلب بنجاح',
-            'data' => $service
-        ]);
-    }
+    return response()->json([
+        'message' => 'تم تحديث حالة الطلب بنجاح',
+        'status' => $service->status
+    ]);
+}
     public function update(Request $request, $id)
     {
         $service = Home_Service::findOrFail($id);

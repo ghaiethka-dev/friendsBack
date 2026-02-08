@@ -16,7 +16,7 @@ protected $table = 'home_services';
         'phone',
         'address',
         'latitude',
-        'longitude'
+        'longitude',
         'status',
     ];
     public function images()

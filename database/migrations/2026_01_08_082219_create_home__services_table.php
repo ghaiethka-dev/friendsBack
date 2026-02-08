@@ -22,7 +22,7 @@ return new class extends Migration
             $table->string('address')->nullable();
             $table->double('latitude')->nullable();
             $table->double('longitude')->nullable();
-}
+        });
     }
 
     /**
@@ -30,7 +30,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-
         Schema::dropIfExists('home__services');
     }
 };
