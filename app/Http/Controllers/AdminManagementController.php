@@ -12,6 +12,20 @@ class AdminManagementController extends Controller
     // دالة إنشاء مشرف (سواء محافظة أو مدينة)
     public function store(Request $request)
     {
+        $currentUser = $request->user();
+        // منع أدمن المحافظة من إنشاء حساب في محافظة غير محافظته
+    if ($currentUser->role === 'admin') {
+        if ($request->governorate !== $currentUser->governorate) {
+            return response()->json([
+                'message' => 'لا يملك أدمن المحافظة صلاحية إضافة موظفين خارج نطاق محافظته (' . $currentUser->governorate . ')'
+            ], 403);
+        }
+        
+        // تأكد أنه ينشئ city_admin فقط وليس أدمن مثله
+        if ($request->role !== 'city_admin') {
+             return response()->json(['message' => 'يمكنك إضافة موظفي مدن فقط'], 403);
+        }
+    }
         // التحقق من المدخلات
         $validator = Validator::make($request->all(), [
             'name' => 'required|string',
@@ -77,4 +91,38 @@ class AdminManagementController extends Controller
 
         return response()->json($employees);
     }
+
+    // في ملف App/Http/Controllers/AdminManagementController.php
+
+public function destroy(Request $request, $id)
+{
+    $currentUser = $request->user(); // الشخص الذي يحاول الحذف
+    $targetUser = User::findOrFail($id); // الشخص المراد حذفه
+
+    // 1. إذا كان الذي يحذف هو "سوبر أدمن" -> يحذف أي شخص
+    if ($currentUser->role === 'super_admin') {
+        $targetUser->delete();
+        return response()->json(['message' => 'تم حذف الحساب بنجاح (سوبر أدمن)']);
+    }
+
+    // 2. إذا كان الذي يحذف هو "أدمن محافظة"
+    if ($currentUser->role === 'admin') {
+        
+        // شرط أ: لا يجوز له حذف أدمن مثله، فقط city_admin
+        if ($targetUser->role !== 'city_admin') {
+            return response()->json(['message' => 'لا تملك صلاحية حذف هذا المستوى الإداري'], 403);
+        }
+
+        // شرط ب: يجب أن يكون أدمن المدينة تابعاً لنفس محافظة أدمن المحافظة
+        if ($targetUser->governorate !== $currentUser->governorate) {
+            return response()->json(['message' => 'لا يمكنك حذف موظف خارج محافظتك'], 403);
+        }
+
+        // إذا تحققت الشروط، يتم الحذف
+        $targetUser->delete();
+        return response()->json(['message' => 'تم حذف موظف المدينة بنجاح']);
+    }
+
+    return response()->json(['message' => 'غير مصرح لك القيام بهذه العملية'], 403);
+}
 }
