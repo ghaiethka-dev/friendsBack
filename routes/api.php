@@ -49,6 +49,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/all-admins', [AdminManagementController::class, 'getAllAdmins']);
 
 
+    Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy']);
+
+
     Route::apiResource('home-services', HomeServiceController::class);
     Route::get('/ads', [AdController::class, 'index']);
     /*
@@ -76,7 +79,6 @@ Route::middleware('auth:sanctum')->group(function () {
     |--------------------------------------------------------------------------
     */
     Route::middleware('role:super_admin')->group(function () {
-        Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy']);
 
     });
 
