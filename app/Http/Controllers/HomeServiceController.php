@@ -20,13 +20,13 @@ class HomeServiceController extends Controller
         // 3. تطبيق شروط الفلترة حسب الرتبة
         if ($currentUser->role === 'super_admin') {
             // السوبر أدمن: يرى كل الطلبات في العراق
-        } 
+        }
         elseif ($currentUser->role === 'admin') {
             // أدمن المحافظة: يرى كل الطلبات التابعة لمحافظته (بغض النظر عن المدينة)
             $query->whereHas('user', function($q) use ($currentUser) {
                 $q->where('governorate', $currentUser->governorate);
             });
-        } 
+        }
         elseif ($currentUser->role === 'city_admin') {
             // أدمن المدينة: يرى الطلبات التي في مدينته + محافظته حصراً
             $query->whereHas('user', function($q) use ($currentUser) {
@@ -79,7 +79,7 @@ class HomeServiceController extends Controller
         'service_type' => $request->service_type,
         'description'  => $request->description,
         'profession'   => $request->profession,
-        
+
         // --- الإضافات الجديدة ---
         'phone'        => $request->phone,
         'address'      => $request->address,
@@ -106,7 +106,44 @@ class HomeServiceController extends Controller
     ], 201);
 }
 
+public function updateStatus(Request $request, $id)
+    {
+        $service = Home_Service::findOrFail($id);
 
+        // التحقق من المدخلات
+        $request->validate([
+            'status' => 'required|in:pending,accepted,rejected',
+        ]);
+
+        // تحديث الحالة
+        $service->update([
+            'status' => $request->status
+        ]);
+
+        // --- (اختياري) إرسال إشعار للمستخدم بتغير الحالة ---
+        // بما أن لديك NotificationController وموديل Notification
+        $message = '';
+        if ($request->status === 'accepted') {
+            $message = 'تم قبول طلبك للخدمة المنزلية';
+        } elseif ($request->status === 'rejected') {
+            $message = 'عذراً، تم رفض طلبك للخدمة المنزلية';
+        }
+
+        if ($message) {
+            \App\Models\Notification::create([
+                'user_id' => $service->user_id, // صاحب الطلب
+                'title'   => 'تحديث حالة الطلب',
+                'message' => $message,
+                'is_read' => false,
+            ]);
+        }
+        // ----------------------------------------------------
+
+        return response()->json([
+            'message' => 'تم تغيير حالة الطلب بنجاح',
+            'data' => $service
+        ]);
+    }
     public function update(Request $request, $id)
     {
         $service = Home_Service::findOrFail($id);
