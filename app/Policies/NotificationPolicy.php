@@ -57,9 +57,11 @@ class NotificationPolicy
     /**
      * Determine whether the user can delete the model.
      */
+
     public function delete(User $user, Notification $notification): bool
     {
-        return false;
+        // السماح بالحذف فقط إذا كان المستخدم هو صاحب الإشعار
+        return $user->id === $notification->user_id;
     }
 
     /**
