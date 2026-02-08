@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Home_Service;
 use App\Models\Image;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -106,17 +107,36 @@ class HomeServiceController extends Controller
     ], 201);
 }
 
+// في ملف HomeServiceController.php
+// تأكد من إضافة هذا في الأعلى
+
 public function updateStatus(Request $request, $id)
 {
+    // 1. التحقق من البيانات (نضيف admin_note لاستقبال الملاحظة من التطبيق)
     $request->validate([
-        'status' => 'required|in:pending,accepted,rejected'
+        'status' => 'required|in:pending,accepted,rejected',
+        'admin_note' => 'nullable|string' 
     ]);
 
     $service = Home_Service::findOrFail($id);
+    
+    // 2. تحديث الحالة
     $service->update(['status' => $request->status]);
 
+    // 3. إنشاء الإشعار في قاعدة البيانات فوراً
+    $title = $request->status == 'accepted' ? 'تم قبول طلبك ✅' : 'تم رفض الطلب ❌';
+    // إذا لم يكتب الأدمن ملاحظة، نضع نص افتراضي
+    $note = $request->admin_note ?? ($request->status == 'accepted' ? 'تم قبول طلبك' : 'تم رفض طلبك');
+
+    Notification::create([
+        'user_id' => $service->user_id,
+        'title'   => $title,
+        'message' => $note, // هنا سيتم حفظ الموعد أو سبب الرفض
+        'is_read' => false,
+    ]);
+
     return response()->json([
-        'message' => 'تم تحديث حالة الطلب بنجاح',
+        'message' => 'تم تحديث حالة الطلب وإرسال الإشعار بنجاح',
         'status' => $service->status
     ]);
 }
