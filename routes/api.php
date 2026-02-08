@@ -47,7 +47,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // 3. عرض كافة المشرفين (يستخدمها Super Admin)
     Route::get('/all-admins', [AdminManagementController::class, 'getAllAdmins']);
-    
+
 
     Route::apiResource('home-services', HomeServiceController::class);
     Route::get('/ads', [AdController::class, 'index']);
@@ -56,6 +56,7 @@ Route::middleware('auth:sanctum')->group(function () {
     | 3. Admin & Super Admin Only (إدارة المحتوى)
     |--------------------------------------------------------------------------
     */
+    Route::put('/home-services/{id}/status', [HomeServiceController::class, 'updateStatus']);
     Route::middleware('role:admin,super_admin')->group(function () {
 
         Route::post('/admin/notifications', [NotificationController::class, 'store']);
@@ -69,7 +70,6 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::delete('/delete-admin/{id}', [AdminManagementController::class, 'destroy']);
     });
-
     /*
     |--------------------------------------------------------------------------
     | 4. Super Admin Only (صلاحيات حساسة جداً)
