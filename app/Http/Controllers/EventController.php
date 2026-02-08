@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Event;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class EventController extends Controller
 {
@@ -30,51 +31,41 @@ class EventController extends Controller
         return $query->paginate(10);
     }
 
-    public function show(Event $event)
-    {
-        $this->authorize('view', $event);
-
-        return $event->load(['user', 'worker']);
-    }
-
     public function store(Request $request)
-    {
-        $this->authorize('create', Event::class);
+{
+    // 1. التحقق من البيانات المرسلة فقط من الفرونت
+    $request->validate([
+        'title'        => 'required|string|max:255',
+        'description'  => 'required|string',
+        'before_image' => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
+        'after_image'  => 'nullable|image|mimes:jpg,jpeg,png|max:5120',
+    ]);
 
-        $request->validate([
-            'user_id'      => 'nullable|exists:users,id',
-            'title'  => 'required|string',
-            'description'  => 'required|string',
-            'city'         => 'required|string',
-            'before_image' => 'nullable|image',
-            'after_image'  => 'nullable|image',
-        ]);
+    $worker = $request->user(); // الموظف المسجل حالياً هو الـ worker
 
-        $worker = $request->user();
+    // 2. معالجة الصور
+    $beforePath = $request->file('before_image') ? $request->file('before_image')->store('events', 'public') : null;
+    $afterPath  = $request->file('after_image') ? $request->file('after_image')->store('events', 'public') : null;
 
-        $client = \App\Models\User::findOrFail($request->user_id);
+    // 3. إنشاء الحدث
+    // أخذنا المحافظة والمدينة تلقائياً من بيانات الموظف (الـ worker) 
+    // لأن الفرونت لا يوفر حقولاً لاختيارها في صفحة الإضافة
+    $event = Event::create([
+        'worker_id'    => $worker->id,
+        'user_id'      => null, // يمكن تركه null أو ربطه بطلب سابق
+        'title'        => $request->title,
+        'description'  => $request->description,
+        'before_image' => $beforePath,
+        'after_image'  => $afterPath,
+        'governorate'  => $worker->governorate, 
+        'city'         => $worker->city, 
+    ]);
 
-        $before = $request->file('before_image')?->store('events', 'public');
-        $after  = $request->file('after_image')?->store('events', 'public');
-
-        $event = Event::create([
-            'user_id'      => $client->id,
-            'worker_id'    => $worker->id,
-            'title'  => $request->title,
-            'description'  => $request->description,
-            'before_image' => $before,
-            'after_image'  => $after,
-
-            'governorate'  => $worker->governorate,
-
-            'city'         => $request->city,
-        ]);
-
-        return response()->json([
-            'message' => 'تم إنشاء الحدث بنجاح',
-            'event'   => $event
-        ], 201);
-    }
+    return response()->json([
+        'message' => 'تم إضافة العمل بنجاح',
+        'data'    => $event
+    ], 201);
+}
 
     public function update(Request $request, Event $event)
     {
@@ -85,12 +76,20 @@ class EventController extends Controller
         return response()->json(['message' => 'تم التحديث بنجاح']);
     }
 
-    public function destroy(Event $event)
-    {
-        $this->authorize('delete', $event);
+    // App/Http/Controllers/EventController.php
 
-        $event->delete();
-
-        return response()->json(['message' => 'تم الحذف']);
+public function destroy(Event $event)
+{
+    // حذف الصور من التخزين لتوفير المساحة
+    if ($event->before_image) {
+        Storage::disk('public')->delete($event->before_image);
     }
+    if ($event->after_image) {
+        Storage::disk('public')->delete($event->after_image);
+    }
+
+    $event->delete();
+
+    return response()->json(['message' => 'تم حذف العمل بنجاح']);
+}
 }
