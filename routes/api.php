@@ -8,7 +8,7 @@ use App\Http\Controllers\EventController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\HomeServiceController;
-
+use App\Http\Controllers\AdminManagementController; // الكلاس الجديد
 /*
 |--------------------------------------------------------------------------
 | 1. Public Routes (الكل يراها بما في ذلك الزوار)
@@ -39,6 +39,16 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/notifications/{notification}', [NotificationController::class, 'show']);
     Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
 
+// 1. إنشاء مشرف جديد (يستخدمها Super Admin لإنشاء Admin، و Admin لإنشاء City Admin)
+    Route::post('/create-admin', [AdminManagementController::class, 'store']);
+
+    // 2. عرض موظفي المدن التابعين لمحافظة الأدمن الحالي (يستخدمها Admin)
+    Route::get('/city-admins', [AdminManagementController::class, 'getCityAdmins']);
+
+    // 3. عرض كافة المشرفين (يستخدمها Super Admin)
+    Route::get('/all-admins', [AdminManagementController::class, 'getAllAdmins']);
+    
+
     Route::apiResource('home-services', HomeServiceController::class);
     Route::get('/ads', [AdController::class, 'index']);
     /*
@@ -56,6 +66,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::apiResource('ads', AdController::class)->except(['index']);
         Route::delete('/ads/{ad}', [AdController::class, 'destroy']);
+
+        Route::delete('/delete-admin/{id}', [AdminManagementController::class, 'destroy']);
     });
 
     /*
