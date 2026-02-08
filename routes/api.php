@@ -47,6 +47,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // 3. عرض كافة المشرفين (يستخدمها Super Admin)
     Route::get('/all-admins', [AdminManagementController::class, 'getAllAdmins']);
+    
+
     Route::apiResource('home-services', HomeServiceController::class);
     Route::get('/ads', [AdController::class, 'index']);
     /*
@@ -64,6 +66,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::apiResource('ads', AdController::class)->except(['index']);
         Route::delete('/ads/{ad}', [AdController::class, 'destroy']);
+
+        Route::delete('/delete-admin/{id}', [AdminManagementController::class, 'destroy']);
     });
 
     /*
