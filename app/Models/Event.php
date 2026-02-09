@@ -13,7 +13,22 @@ class Event extends Model
         'description',
         'before_image',
         'after_image',
+        'governorate',
+        'city',
     ];
+    public function getBeforeImageUrlAttribute()
+    {
+        return $this->before_image ? asset('storage/' . $this->before_image) : null;
+    }
+
+    // تحويل رابط الصورة "بعد" إلى رابط كامل
+    public function getAfterImageUrlAttribute()
+    {
+        return $this->after_image ? asset('storage/' . $this->after_image) : null;
+    }
+
+    // إضافة الروابط تلقائياً عند جلب البيانات
+    protected $appends = ['before_image_url', 'after_image_url'];
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
@@ -23,4 +38,5 @@ class Event extends Model
     {
         return $this->belongsTo(User::class, 'worker_id');
     }
+
 }

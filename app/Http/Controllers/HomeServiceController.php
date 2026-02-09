@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Home_Service;
 use App\Models\Image;
+use App\Models\Notification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
@@ -20,13 +21,13 @@ class HomeServiceController extends Controller
         // 3. تطبيق شروط الفلترة حسب الرتبة
         if ($currentUser->role === 'super_admin') {
             // السوبر أدمن: يرى كل الطلبات في العراق
-        } 
+        }
         elseif ($currentUser->role === 'admin') {
             // أدمن المحافظة: يرى كل الطلبات التابعة لمحافظته (بغض النظر عن المدينة)
             $query->whereHas('user', function($q) use ($currentUser) {
                 $q->where('governorate', $currentUser->governorate);
             });
-        } 
+        }
         elseif ($currentUser->role === 'city_admin') {
             // أدمن المدينة: يرى الطلبات التي في مدينته + محافظته حصراً
             $query->whereHas('user', function($q) use ($currentUser) {
@@ -79,7 +80,7 @@ class HomeServiceController extends Controller
         'service_type' => $request->service_type,
         'description'  => $request->description,
         'profession'   => $request->profession,
-        
+
         // --- الإضافات الجديدة ---
         'phone'        => $request->phone,
         'address'      => $request->address,
@@ -106,7 +107,39 @@ class HomeServiceController extends Controller
     ], 201);
 }
 
+// في ملف HomeServiceController.php
+// تأكد من إضافة هذا في الأعلى
 
+public function updateStatus(Request $request, $id)
+{
+    // 1. التحقق من البيانات (نضيف admin_note لاستقبال الملاحظة من التطبيق)
+    $request->validate([
+        'status' => 'required|in:pending,accepted,rejected',
+        'admin_note' => 'nullable|string'
+    ]);
+
+    $service = Home_Service::findOrFail($id);
+
+    // 2. تحديث الحالة
+    $service->update(['status' => $request->status]);
+
+    // 3. إنشاء الإشعار في قاعدة البيانات فوراً
+    $title = $request->status == 'accepted' ? 'تم قبول طلبك ✅' : 'تم رفض الطلب ❌';
+    // إذا لم يكتب الأدمن ملاحظة، نضع نص افتراضي
+    $note = $request->admin_note ?? ($request->status == 'accepted' ? 'تم قبول طلبك' : 'تم رفض طلبك');
+
+    Notification::create([
+        'user_id' => $service->user_id,
+        'title'   => $title,
+        'message' => $note, // هنا سيتم حفظ الموعد أو سبب الرفض
+        'is_read' => false,
+    ]);
+
+    return response()->json([
+        'message' => 'تم تحديث حالة الطلب وإرسال الإشعار بنجاح',
+        'status' => $service->status
+    ]);
+}
     public function update(Request $request, $id)
     {
         $service = Home_Service::findOrFail($id);
@@ -141,13 +174,20 @@ class HomeServiceController extends Controller
         ]);
     }
 
-    public function destroy($id)
-    {
-        $service = Home_Service::findOrFail($id);
-        $service->delete(); // الصور تُحذف تلقائيًا (cascade)
+    // HomeServiceController.php
 
-        return response()->json([
-            'message' => 'تم حذف الطلب بنجاح'
-        ]);
+public function destroy($id)
+{
+    $currentUser = auth()->user();
+
+    // منع أدمن المدينة من الحذف
+    if ($currentUser->role === 'city_admin') {
+        return response()->json(['message' => 'غير مصرح لك بحذف الطلبات'], 403);
     }
+
+    $service = Home_Service::findOrFail($id);
+    $service->delete();
+
+    return response()->json(['message' => 'تم حذف الطلب بنجاح']);
+}
 }
