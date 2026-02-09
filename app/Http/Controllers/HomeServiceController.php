@@ -115,11 +115,11 @@ public function updateStatus(Request $request, $id)
     // 1. التحقق من البيانات (نضيف admin_note لاستقبال الملاحظة من التطبيق)
     $request->validate([
         'status' => 'required|in:pending,accepted,rejected',
-        'admin_note' => 'nullable|string' 
+        'admin_note' => 'nullable|string'
     ]);
 
     $service = Home_Service::findOrFail($id);
-    
+
     // 2. تحديث الحالة
     $service->update(['status' => $request->status]);
 
@@ -174,13 +174,20 @@ public function updateStatus(Request $request, $id)
         ]);
     }
 
-    public function destroy($id)
-    {
-        $service = Home_Service::findOrFail($id);
-        $service->delete(); // الصور تُحذف تلقائيًا (cascade)
+    // HomeServiceController.php
 
-        return response()->json([
-            'message' => 'تم حذف الطلب بنجاح'
-        ]);
+public function destroy($id)
+{
+    $currentUser = auth()->user();
+
+    // منع أدمن المدينة من الحذف
+    if ($currentUser->role === 'city_admin') {
+        return response()->json(['message' => 'غير مصرح لك بحذف الطلبات'], 403);
     }
+
+    $service = Home_Service::findOrFail($id);
+    $service->delete();
+
+    return response()->json(['message' => 'تم حذف الطلب بنجاح']);
+}
 }
