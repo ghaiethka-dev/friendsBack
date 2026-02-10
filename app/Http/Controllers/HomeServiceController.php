@@ -35,6 +35,9 @@ class HomeServiceController extends Controller
                   ->where('city', $currentUser->city);
             });
         }
+         elseif (!in_array($currentUser->role, ['super_admin', 'admin', 'city_admin'])) {
+             $query->where('user_id', $currentUser->id);
+        }
 
         // 4. تنفيذ الاستعلام
         $services = $query->get();
