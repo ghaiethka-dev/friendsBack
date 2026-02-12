@@ -22,6 +22,8 @@ Route::get('/', function () {
 });
 
 
+Route::post('/verify-email', [AuthController::class, 'verifyEmail']);
+
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login',    [AuthController::class, 'login']);
 
