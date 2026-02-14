@@ -35,10 +35,9 @@ class HomeServiceController extends Controller
                   ->where('city', $currentUser->city);
             });
         }
-         elseif (!in_array($currentUser->role, ['super_admin', 'admin', 'city_admin'])) {
+        elseif (!in_array($currentUser->role, ['super_admin', 'admin', 'city_admin'])) {
              $query->where('user_id', $currentUser->id);
         }
-
         // 4. تنفيذ الاستعلام
         $services = $query->get();
 
@@ -118,11 +117,11 @@ public function updateStatus(Request $request, $id)
     // 1. التحقق من البيانات (نضيف admin_note لاستقبال الملاحظة من التطبيق)
     $request->validate([
         'status' => 'required|in:pending,accepted,rejected',
-        'admin_note' => 'nullable|string' 
+        'admin_note' => 'nullable|string'
     ]);
 
     $service = Home_Service::findOrFail($id);
-    
+
     // 2. تحديث الحالة
     $service->update(['status' => $request->status]);
 
@@ -177,13 +176,34 @@ public function updateStatus(Request $request, $id)
         ]);
     }
 
-    public function destroy($id)
-    {
-        $service = Home_Service::findOrFail($id);
-        $service->delete(); // الصور تُحذف تلقائيًا (cascade)
+    // HomeServiceController.php
 
-        return response()->json([
-            'message' => 'تم حذف الطلب بنجاح'
-        ]);
+public function destroy($id)
+{
+$currentUser = Auth::user();
+    $service = Home_Service::findOrFail($id);
+
+    // 1. التحقق إذا كان المستخدم هو صاحب الطلب (للزبائن العاديين)
+    if (!in_array($currentUser->role, ['super_admin', 'admin', 'city_admin'])) {
+
+        // التأكد من الملكية
+        if ($service->user_id !== $currentUser->id) {
+            return response()->json(['message' => 'غير مصرح لك بحذف هذا الطلب'], 403);
+        }
+
+        // التأكد من حالة الطلب (يمكن الحذف فقط إذا كان قيد الانتظار)
+        if ($service->status !== 'pending') {
+            return response()->json(['message' => 'لا يمكن إلغاء الطلب بعد قبوله أو رفضه'], 400);
+        }
     }
+
+    // 2. منع أدمن المدينة من الحذف (كما هو في كودك الأصلي)
+    if ($currentUser->role === 'city_admin') {
+        return response()->json(['message' => 'غير مصرح لك بحذف الطلبات'], 403);
+    }
+
+    $service->delete();
+
+    return response()->json(['message' => 'تم إلغاء الطلب بنجاح']);
+}
 }
