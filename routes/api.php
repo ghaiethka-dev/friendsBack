@@ -14,18 +14,9 @@ use App\Http\Controllers\AdminManagementController; // الكلاس الجديد
 | 1. Public Routes (الكل يراها بما في ذلك الزوار)
 |--------------------------------------------------------------------------
 */
-Route::get('/', function () {
-    return response()->json([
-        'status' => true,
-        'message' => 'CloseFriend API is running 🚀'
-    ]);
-});
-
-
-
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login',    [AuthController::class, 'login']);
-
+Route::post('/verify-email', [AuthController::class, 'verifyEmail']);
 Route::get('/events', [EventController::class, 'index']);
 Route::get('/events/{event}', [EventController::class, 'show']);
 
