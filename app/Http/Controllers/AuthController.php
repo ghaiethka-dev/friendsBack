@@ -74,22 +74,22 @@ class AuthController extends Controller
 
         // إرسال كود التحقق للإيميل
         if ($user->email) {
-            try {
-                Mail::raw("كود التحقق الخاص بك هو: $verificationCode", function ($message) use ($user) {
-                    $message->to($user->email)->subject('تفعيل الحساب');
-                });
-            } catch (\Exception $e) {
-                // تسجيل الخطأ في سجلات Railway (Logs)
-                Log::error("خطأ في إرسال الإيميل: " . $e->getMessage());
+            // try {
+            //     Mail::raw("كود التحقق الخاص بك هو: $verificationCode", function ($message) use ($user) {
+            //         $message->to($user->email)->subject('تفعيل الحساب');
+            //     });
+            // } catch (\Exception $e) {
+            //     // تسجيل الخطأ في سجلات Railway (Logs)
+            //     Log::error("خطأ في إرسال الإيميل: " . $e->getMessage());
 
-                // حذف المستخدم الذي تم إنشاؤه لإتاحة المحاولة مرة أخرى بعد إصلاح الإعدادات
-                $user->delete();
+            //     // حذف المستخدم الذي تم إنشاؤه لإتاحة المحاولة مرة أخرى بعد إصلاح الإعدادات
+            //     $user->delete();
 
-                return response()->json([
-                    'message' => 'فشل إرسال كود التحقق. يرجى التحقق من إعدادات SMTP على Railway.',
-                    'error' => $e->getMessage() // سيظهر لك سبب المشكلة الحقيقي هنا
-                ], 500);
-            }
+            //     return response()->json([
+            //         'message' => 'فشل إرسال كود التحقق. يرجى التحقق من إعدادات SMTP على Railway.',
+            //         'error' => $e->getMessage() // سيظهر لك سبب المشكلة الحقيقي هنا
+            //     ], 500);
+            // }
         }
 
         $token = $user->createToken('api_token')->plainTextToken;
