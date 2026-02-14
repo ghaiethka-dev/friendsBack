@@ -11,7 +11,7 @@ Route::get('/', function () {
 });
 Route::get('/test-mail', function () {
     Mail::raw('Test email from Laravel', function ($message) {
-        $message->to('majdalafef123456@gmail.com')
+        $message->to('cybernst2002@gmail.com')
                 ->subject('Test Mail');
     });
 
