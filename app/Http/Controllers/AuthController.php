@@ -22,106 +22,97 @@ class AuthController extends Controller
             'password' => 'required|min:6|confirmed',
             'governorate' => 'required|string',
             'city' => 'required|string',
-            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:4096',
         ]);
 
         $input = $request->email;
         $isEmail = filter_var($input, FILTER_VALIDATE_EMAIL);
 
+        // التحقق من التكرار
         if ($isEmail) {
             if (User::where('email', $input)->exists()) {
-                return response()->json(['message' => 'هذا البريد الإلكتروني مسجل مسبقاً'], 422);
+                return response()->json(['message' => 'البريد الإلكتروني مسجل مسبقاً'], 422);
             }
-            $userData = ['email' => $input, 'phone' => null];
         } else {
-            if (User::where('phone', $input)->exists()) {
-                return response()->json(['message' => 'رقم الهاتف هذا مسجل مسبقاً'], 422);
-            }
-            $userData = ['phone' => $input, 'email' => null];
+             return response()->json(['message' => 'يرجى التسجيل باستخدام بريد إلكتروني صالح'], 422);
         }
 
-        // رفع الصورة
-        $imagePath = null;
-        if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('profiles', 'public');
-        }
-
-        $verificationCode = rand(1000, 9999);
-
-        // إنشاء المستخدم
+        // 1. إنشاء المستخدم
         $user = User::create([
             'name'        => $request->name,
-            'email'       => $userData['email'],
-            'phone'       => $userData['phone'],
+            'email'       => $input,
             'password'    => bcrypt($request->password),
             'governorate' => $request->governorate,
             'city'        => $request->city,
-            'role'        => 'user',
-            'verification_code' => $verificationCode,
+            // لا تقم بتسجيل الدخول مباشرة هنا
         ]);
 
-        // إنشاء البروفايل
-        Profile::create([
-            'user_id'     => $user->id,
-            'name'        => $request->name,
-            'email'       => $userData['email'],
-            'phone'       => $userData['phone'],
-            'image'       => $imagePath,
-            'role'        => 'user',
-            'governorate' => $request->governorate,
-            'city'        => $request->city,
-        ]);
+        // 2. توليد الكود وإرساله
+        $code = rand(1000, 9999);
+        
+        // حفظ الكود في جدول verification_codes الذي رفعته أنت
+        DB::table('verification_codes')->updateOrInsert(
+            ['email' => $user->email],
+            [
+                'code' => $code,
+                'created_at' => now(),
+                'updated_at' => now(),
+                'expires_at' => now()->addMinutes(15) // افترضنا وجود هذا العمود، إذا لم يكن موجوداً احذف السطر
+            ]
+        );
 
-        // إرسال كود التحقق للإيميل
-        if ($user->email) {
-            try {
-                Mail::raw("كود التحقق الخاص بك هو: $verificationCode", function ($message) use ($user) {
-                    $message->to($user->email)->subject('تفعيل الحساب');
-                });
-            } catch (\Exception $e) {
-                // تسجيل الخطأ في سجلات Railway (Logs)
-                Log::error("خطأ في إرسال الإيميل: " . $e->getMessage());
-
-                // حذف المستخدم الذي تم إنشاؤه لإتاحة المحاولة مرة أخرى بعد إصلاح الإعدادات
-                $user->delete();
-
-                return response()->json([
-                    'message' => 'فشل إرسال كود التحقق. يرجى التحقق من إعدادات SMTP على Railway.',
-                    'error' => $e->getMessage() // سيظهر لك سبب المشكلة الحقيقي هنا
-                ], 500);
-            }
+        // محاولة الإرسال
+        try {
+            Mail::raw("رمز التحقق الخاص بك هو: $code", function ($message) use ($user) {
+                $message->to($user->email)
+                        ->subject('تفعيل حساب CloseFriend');
+            });
+        } catch (\Exception $e) {
+            // حتى لو فشل الإرسال، سنخبر المستخدم
+            return response()->json([
+                'message' => 'تم إنشاء الحساب ولكن فشل إرسال الرمز. تواصل مع الدعم.',
+                'error' => $e->getMessage()
+            ], 500);
         }
 
-        $token = $user->createToken('api_token')->plainTextToken;
-
+        // إرجاع رد يطلب من فلاتر الانتقال لصفحة التحقق
         return response()->json([
-            'message' => 'تم التسجيل، يرجى تفعيل الحساب',
-            'token'   => $token,
-            'user'    => $user->load('profile'),
-            'require_verification' => true
+            'message' => 'تم إنشاء الحساب، يرجى تفعيل الإيميل',
+            'require_verification' => true,
+            'email' => $user->email
         ], 201);
     }
 
-    /////////////////////// VERIFY EMAIL
+    // دالة التحقق من الكود (API)
     public function verifyEmail(Request $request)
     {
         $request->validate([
-            'email' => 'required',
+            'email' => 'required|email',
             'code'  => 'required'
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        // البحث في جدول الأكواد
+        $record = DB::table('verification_codes')
+                    ->where('email', $request->email)
+                    ->where('code', $request->code)
+                    ->first();
 
-        if (!$user) {
-            return response()->json(['message' => 'المستخدم غير موجود'], 404);
-        }
-
-        if ($user->verification_code == $request->code) {
+        if ($record) {
+            // تفعيل المستخدم
+            $user = User::where('email', $request->email)->first();
             $user->email_verified_at = now();
-            $user->verification_code = null;
             $user->save();
 
-            return response()->json(['message' => 'تم تفعيل الحساب بنجاح', 'verified' => true], 200);
+            // حذف الكود المستخدم
+            DB::table('verification_codes')->where('email', $request->email)->delete();
+
+            // إنشاء توكن للدخول
+            $token = $user->createToken('api_token')->plainTextToken;
+
+            return response()->json([
+                'message' => 'تم التفعيل بنجاح',
+                'token' => $token,
+                'user' => $user
+            ], 200);
         } else {
             return response()->json(['message' => 'كود التحقق غير صحيح'], 400);
         }
